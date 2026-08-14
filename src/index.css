@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 }
 
 body {
