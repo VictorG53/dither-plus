@@ -17,6 +17,8 @@ jobs:
         permissions:
             contents: read
             packages: write
+        outputs:
+            image: ${{ steps.lowercase.outputs.image }}
 
         steps:
             - name: Checkout code
@@ -69,8 +71,7 @@ jobs:
                   echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
                   chmod 600 ~/.ssh/deploy_key
 
-                  GITHUB_ACTOR_LOWER=$(echo "$GITHUB_ACTOR" | tr '[:upper:]' '[:lower:]')
-                  IMAGE="ghcr.io/$GITHUB_ACTOR_LOWER/ditherplus:latest"
+                  IMAGE="${{ needs.build-and-push.outputs.image }}"
                   GITHUB_TOKEN_VAR="$GITHUB_TOKEN"
                   GITHUB_ACTOR_VAR="$GITHUB_ACTOR"
 
