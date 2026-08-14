@@ -1,0 +1,96 @@
+name: Build and Deploy
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+env:
+    REGISTRY: ghcr.io
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        environment: prod
+        permissions:
+            contents: read
+            packages: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Convert to lowercase
+              id: lowercase
+              run: |
+                  REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+                  REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+                  echo "image=ghcr.io/${REPO_OWNER}/${REPO_NAME}:latest" >> $GITHUB_OUTPUT
+                  echo "image_sha=ghcr.io/${REPO_OWNER}/${REPO_NAME}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and push image
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  file: ./Dockerfile
+                  push: true
+                  tags: |
+                      ${{ steps.lowercase.outputs.image }}
+                      ${{ steps.lowercase.outputs.image_sha }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+    deploy:
+        needs: build-and-push
+        runs-on: ubuntu-latest
+        environment: prod
+        steps:
+            - name: Deploy to production
+              env:
+                  SSH_USER: ${{ secrets.SSH_USER }}
+                  SSH_HOST: ${{ secrets.SSH_HOST }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_ACTOR: ${{ github.actor }}
+                  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+              run: |
+                  mkdir -p ~/.ssh
+                  echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+                  chmod 600 ~/.ssh/deploy_key
+
+                  GITHUB_ACTOR_LOWER=$(echo "$GITHUB_ACTOR" | tr '[:upper:]' '[:lower:]')
+                  IMAGE="ghcr.io/$GITHUB_ACTOR_LOWER/ditherplus:latest"
+                  GITHUB_TOKEN_VAR="$GITHUB_TOKEN"
+                  GITHUB_ACTOR_VAR="$GITHUB_ACTOR"
+
+                  ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST << EOF
+                  set -e
+
+                  echo "$GITHUB_TOKEN_VAR" | docker login ghcr.io -u "$GITHUB_ACTOR_VAR" --password-stdin
+
+                  docker pull $IMAGE
+
+                  docker stop ditherplus || true
+                  docker rm ditherplus || true
+
+                  docker run -d \
+                    --name ditherplus \
+                    --restart unless-stopped \
+                    -p 8004:80 \
+                    $IMAGE
+
+                  docker logout ghcr.io
+
+                  echo "Deployment successful!"
+                  EOF
