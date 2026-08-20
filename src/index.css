@@ -4,9 +4,11 @@
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 }
 
+html,
 body {
   margin: 0;
   font-family: var(--mono);
+  background-color: #f3f2ec;
 }
 
 * {

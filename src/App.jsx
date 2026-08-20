@@ -16,15 +16,15 @@ function hexToRgb(hex) {
 
 function Panel({ title, children, className = '' }) {
   return (
-    <div className={`relative flex h-full flex-col ${className}`}>
+    <div className={`flex h-full min-h-0 flex-col ${className}`}>
       {title && (
-        <div className="sticky top-0 z-10 border-b border-black bg-black px-4 py-2">
+        <div className="shrink-0 border-b border-black bg-black px-4 py-2">
           <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-white">
             {title}
           </span>
         </div>
       )}
-      <div className="flex-1 p-4">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-gutter:stable]">{children}</div>
     </div>
   );
 }
@@ -140,18 +140,18 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f3f2ec] text-black">
-      <header className="shrink-0 border-b border-black px-6 py-5">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#f3f2ec] text-black">
+      <header className="shrink-0 border-b border-black px-4 py-4 sm:px-6 sm:py-5">
         <div className="mx-auto max-w-6xl">
-          <h1 className="text-lg font-semibold uppercase tracking-[0.1em]">
+          <h1 className="text-base font-semibold uppercase tracking-[0.1em] sm:text-lg">
             Dither
             <sup className="ml-0.5 text-[#ff5a1f]">+</sup>
           </h1>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col border-x border-black lg:flex-row">
-        <section className="flex w-full flex-1 flex-col overflow-y-auto border-black max-lg:border-b lg:border-r">
+      <main className="mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col border-black lg:border-x lg:flex-row">
+        <section className="flex w-full min-h-0 flex-col border-black max-lg:h-[40%] max-lg:border-b lg:flex-1 lg:overflow-y-auto lg:border-r lg:[scrollbar-gutter:stable]">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -160,27 +160,41 @@ export default function App() {
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`relative flex min-h-[420px] flex-1 cursor-pointer items-center justify-center border-b border-black p-4 transition-colors ${
+            className={`relative flex min-h-0 flex-1 cursor-pointer items-center justify-center border-b border-black p-3 transition-colors sm:p-4 lg:min-h-[420px] ${
               dragActive ? 'bg-[#ff5a1f]/10' : ''
             }`}
           >
             {imageEl ? (
               <canvas
                 ref={canvasRef}
-                className="max-h-[65vh] max-w-full object-contain"
+                className="max-h-full max-w-full object-contain"
                 style={{
                   aspectRatio: `${imageEl.naturalWidth} / ${imageEl.naturalHeight}`,
-                  width: imageEl.naturalWidth,
-                  height: 'auto',
                   imageRendering: 'pixelated',
                 }}
               />
             ) : (
-              <div className="text-center">
-                <p className="mb-1 text-sm font-medium uppercase tracking-[0.1em]">
+              <div className="flex items-center gap-2 text-center sm:block">
+                <svg
+                  className="h-5 w-5 shrink-0 text-black/40 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                  />
+                </svg>
+                <p className="text-left text-sm font-medium uppercase tracking-[0.1em] sm:mb-1 sm:text-center">
                   Drop an image here
+                  <span className="block text-[11px] font-normal normal-case tracking-normal text-black/40 sm:hidden">
+                    or tap to choose one
+                  </span>
                 </p>
-                <p className="text-[12px] text-black/40">or click to choose one</p>
+                <p className="hidden text-[12px] text-black/40 sm:block">or click to choose one</p>
               </div>
             )}
             <input
@@ -193,13 +207,13 @@ export default function App() {
           </div>
 
           <div className="flex items-stretch justify-between">
-            <span className="truncate self-center px-4 py-3 text-[12px] text-black/50">
+            <span className="min-w-0 truncate self-center px-3 py-3 text-[11px] text-black/50 sm:px-4 sm:text-[12px]">
               {fileName || 'No file loaded'}
             </span>
             {imageEl && (
               <button
                 onClick={handleDownload}
-                className="cursor-pointer border-l border-black bg-black px-4 text-[11px] font-medium uppercase tracking-[0.15em] text-white transition-colors hover:border-[#ff5a1f] hover:bg-[#ff5a1f]"
+                className="shrink-0 cursor-pointer border-l border-black bg-black px-3 text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:border-[#ff5a1f] hover:bg-[#ff5a1f] sm:px-4 sm:text-[11px] sm:tracking-[0.15em]"
               >
                 Download PNG
               </button>
@@ -207,7 +221,7 @@ export default function App() {
           </div>
         </section>
 
-        <aside className="w-full shrink-0 overflow-y-auto lg:h-full lg:w-96">
+        <aside className="w-full min-h-0 max-lg:h-[60%] lg:h-full lg:w-96 lg:shrink-0">
           <Panel title="Settings">
             <Field label="Algorithm">
               <select
@@ -315,8 +329,8 @@ export default function App() {
         </aside>
       </main>
 
-      <footer className="shrink-0 border-t border-black px-6 py-3">
-        <p className="mx-auto max-w-6xl text-[11px] uppercase tracking-[0.15em] text-black/40">
+      <footer className="shrink-0 border-t border-black px-4 py-3 sm:px-6">
+        <p className="mx-auto max-w-6xl text-[10px] uppercase tracking-[0.1em] text-black/40 sm:text-[11px] sm:tracking-[0.15em]">
           by{' '}
           <a
             href="https://fwszs.dev"
