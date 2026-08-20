@@ -132,11 +132,28 @@ export default function App() {
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const link = document.createElement('a');
     const base = fileName.replace(/\.[^.]+$/, '') || 'image';
-    link.download = `${base}-dither.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    const downloadName = `${base}-dither.png`;
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], downloadName, { type: 'image/png' });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch {
+          // user cancelled or share failed, fall back to direct download
+        }
+      }
+
+      const link = document.createElement('a');
+      link.download = downloadName;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }, 'image/png');
   };
 
   return (
